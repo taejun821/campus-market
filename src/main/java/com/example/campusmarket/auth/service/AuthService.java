@@ -3,6 +3,9 @@ package com.example.campusmarket.auth.service;
 import com.example.campusmarket.auth.dto.LoginRequest;
 import com.example.campusmarket.auth.dto.RegisterRequest;
 import com.example.campusmarket.auth.dto.UserResponse;
+import com.example.campusmarket.common.exception.BadRequestException;
+import com.example.campusmarket.common.exception.DuplicateException;
+import com.example.campusmarket.common.exception.NotFoundException;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -36,7 +39,7 @@ public class AuthService {
 
         DocumentReference docRef = firestore.collection("users").document(uid);
         if (docRef.get().get().exists()) {
-            throw new IllegalStateException("이미 가입된 사용자입니다.");
+            throw new DuplicateException("이미 가입된 사용자입니다.");
         }
 
         Map<String, Object> userData = new HashMap<>();
@@ -56,7 +59,7 @@ public class AuthService {
 
         DocumentSnapshot doc = firestore.collection("users").document(uid).get().get();
         if (!doc.exists()) {
-            throw new IllegalStateException("가입되지 않은 사용자입니다. 먼저 회원가입을 해주세요.");
+            throw new NotFoundException("가입되지 않은 사용자입니다. 먼저 회원가입을 해주세요.");
         }
 
         Timestamp createdAt = doc.getTimestamp("createdAt");
@@ -71,13 +74,13 @@ public class AuthService {
 
     private void validateUniversityEmail(String email) {
         if (email == null) {
-            throw new IllegalArgumentException("이메일 정보가 없습니다.");
+            throw new BadRequestException("이메일 정보가 없습니다.");
         }
         String domain = email.substring(email.indexOf('@') + 1);
         boolean valid = allowedDomains.stream()
             .anyMatch(allowed -> domain.equals(allowed) || domain.endsWith("." + allowed));
         if (!valid) {
-            throw new IllegalArgumentException("학교 이메일 주소만 가입 가능합니다. (허용 도메인: " + String.join(", ", allowedDomains) + ")");
+            throw new BadRequestException("학교 이메일 주소만 가입 가능합니다. (허용 도메인: " + String.join(", ", allowedDomains) + ")");
         }
     }
 }

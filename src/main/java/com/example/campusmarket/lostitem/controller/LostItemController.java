@@ -31,55 +31,28 @@ public class LostItemController {
     public ResponseEntity<ApiResponse<LostItemResponse>> create(
         @RequestBody @Valid LostItemRequest request,
         Authentication auth
-    ) {
-        try {
-            String uid = getUid(auth);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(lostItemService.create(request, uid)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(e.getMessage()));
-        }
+    ) throws Exception {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success(lostItemService.create(request, getUid(auth))));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<LostItemResponse>>> findAll() {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(lostItemService.findAll()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<List<LostItemResponse>>> findAll() throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.findAll()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<LostItemResponse>> findById(@PathVariable String id) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(lostItemService.findById(id)));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<LostItemResponse>> findById(@PathVariable String id) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.findById(id)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(
         @PathVariable String id,
         Authentication auth
-    ) {
-        try {
-            lostItemService.delete(id, getUid(auth));
-            return ResponseEntity.ok(ApiResponse.success(null));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(e.getMessage()));
-        }
+    ) throws Exception {
+        lostItemService.delete(id, getUid(auth));
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     private String getUid(Authentication auth) {

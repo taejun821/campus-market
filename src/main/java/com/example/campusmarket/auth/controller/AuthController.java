@@ -22,26 +22,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserResponse>> register(@RequestBody @Valid RegisterRequest request) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(authService.register(request)));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("인증 실패: " + e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<UserResponse>> register(@RequestBody @Valid RegisterRequest request) throws Exception {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(authService.register(request)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<UserResponse>> login(@RequestBody @Valid LoginRequest request) {
-        try {
-            return ResponseEntity.ok(ApiResponse.success(authService.login(request)));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("인증 실패: " + e.getMessage()));
-        }
+    public ResponseEntity<ApiResponse<UserResponse>> login(@RequestBody @Valid LoginRequest request) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(authService.login(request)));
     }
 }

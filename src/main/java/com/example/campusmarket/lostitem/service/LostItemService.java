@@ -1,5 +1,7 @@
 package com.example.campusmarket.lostitem.service;
 
+import com.example.campusmarket.common.exception.ForbiddenException;
+import com.example.campusmarket.common.exception.NotFoundException;
 import com.example.campusmarket.lostitem.dto.LostItemRequest;
 import com.example.campusmarket.lostitem.dto.LostItemResponse;
 import com.google.cloud.Timestamp;
@@ -62,7 +64,7 @@ public class LostItemService {
     public LostItemResponse findById(String id) throws Exception {
         DocumentSnapshot doc = firestore.collection(COLLECTION).document(id).get().get();
         if (!doc.exists()) {
-            throw new IllegalArgumentException("존재하지 않는 분실물입니다.");
+            throw new NotFoundException("존재하지 않는 분실물입니다.");
         }
         return toResponse(doc);
     }
@@ -70,10 +72,10 @@ public class LostItemService {
     public void delete(String id, String uid) throws Exception {
         DocumentSnapshot doc = firestore.collection(COLLECTION).document(id).get().get();
         if (!doc.exists()) {
-            throw new IllegalArgumentException("존재하지 않는 분실물입니다.");
+            throw new NotFoundException("존재하지 않는 분실물입니다.");
         }
         if (!uid.equals(doc.getString("userid"))) {
-            throw new SecurityException("본인이 등록한 분실물만 삭제할 수 있습니다.");
+            throw new ForbiddenException("본인이 등록한 분실물만 삭제할 수 있습니다.");
         }
         firestore.collection(COLLECTION).document(id).delete().get();
     }
