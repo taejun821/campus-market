@@ -2,9 +2,8 @@ package com.example.campusmarket;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 
-@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
+@SpringBootApplication
 public class CampusMarketApplication {
     public static void main(String[] args) {
         SpringApplication.run(CampusMarketApplication.class, args);
