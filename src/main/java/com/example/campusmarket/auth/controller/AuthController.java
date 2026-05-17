@@ -1,6 +1,8 @@
 package com.example.campusmarket.auth.controller;
 
+import com.example.campusmarket.auth.dto.AccountDeleteRequest;
 import com.example.campusmarket.auth.dto.LoginRequest;
+import com.example.campusmarket.auth.dto.PasswordChangeRequest;
 import com.example.campusmarket.auth.dto.RegisterRequest;
 import com.example.campusmarket.auth.dto.UserResponse;
 import com.example.campusmarket.auth.service.AuthService;
@@ -9,7 +11,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,10 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
  * 인증 API 컨트롤러
  *
  * Base URL: /api/auth
- * 인증 토큰 불필요 (SecurityConfig에서 /api/auth/** 전체 허용)
  *
- * POST /api/auth/register - 회원가입
- * POST /api/auth/login    - 로그인
+ * POST   /api/auth/register  - 회원가입 (인증 불필요)
+ * POST   /api/auth/login     - 로그인 (인증 불필요)
+ * PUT    /api/auth/password  - 비밀번호 변경 (JWT 필요)
+ * DELETE /api/auth/me        - 회원 탈퇴 (JWT 필요)
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -40,5 +46,28 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<UserResponse>> login(@RequestBody @Valid LoginRequest request) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(authService.login(request)));
+    }
+
+    // 비밀번호 변경 - 현재 비밀번호 확인 후 새 비밀번호로 변경
+    @PutMapping("/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+        @RequestBody @Valid PasswordChangeRequest request, Authentication auth
+    ) throws Exception {
+        authService.changePassword(uid(auth), request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 회원 탈퇴 - 비밀번호 확인 후 사용자 및 게시물 데이터 삭제
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(
+        @RequestBody @Valid AccountDeleteRequest request, Authentication auth
+    ) throws Exception {
+        authService.deleteAccount(uid(auth), request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // JWT principal에서 uid 추출
+    private String uid(Authentication auth) {
+        return (String) auth.getPrincipal();
     }
 }

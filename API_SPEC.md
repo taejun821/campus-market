@@ -51,6 +51,8 @@ Authorization: Bearer {token}
 ### 1-1. 회원가입
 `POST /api/auth/register`
 
+> 인증 토큰 불필요
+
 **Request Body**
 ```json
 {
@@ -92,6 +94,8 @@ Authorization: Bearer {token}
 ### 1-2. 로그인
 `POST /api/auth/login`
 
+> 인증 토큰 불필요
+
 **Request Body**
 ```json
 {
@@ -115,6 +119,51 @@ Authorization: Bearer {token}
   },
   "message": null
 }
+```
+
+---
+
+### 1-3. 비밀번호 변경
+`PUT /api/auth/password`
+
+> `Authorization` 헤더 필요
+
+**Request Body**
+```json
+{
+  "currentPassword": "password123",
+  "newPassword": "newpassword456"
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| currentPassword | String | ✅ | 현재 비밀번호 (본인 확인용) |
+| newPassword | String | ✅ | 새 비밀번호 (최소 8자, 현재 비밀번호와 달라야 함) |
+
+**Response** `200 OK`
+```json
+{ "success": true, "data": null, "message": null }
+```
+
+---
+
+### 1-4. 회원 탈퇴
+`DELETE /api/auth/me`
+
+> `Authorization` 헤더 필요
+> 탈퇴 시 해당 유저의 중고거래·분실물 게시물도 함께 삭제됩니다.
+
+**Request Body**
+```json
+{
+  "password": "password123"
+}
+```
+
+**Response** `200 OK`
+```json
+{ "success": true, "data": null, "message": null }
 ```
 
 ---
@@ -643,21 +692,35 @@ Authorization: Bearer {token}
 ### 6-3. 채팅방 메시지 목록 조회
 `GET /api/chat/rooms/{roomId}/messages`
 
-> 참여자만 조회 가능. 최대 100개, 오래된 순으로 반환
+> 참여자만 조회 가능. 커서 기반 페이지네이션 (오래된 메시지 추가 로드 지원)
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| cursor | Long | ❌ | 이전 응답의 `nextCursor` 값 (없으면 최신 메시지부터) |
+| size | int | ❌ | 페이지 크기 (기본값: 30) |
+
+> cursor 없으면 최신 메시지 `size`개 반환, cursor 있으면 그보다 오래된 메시지 반환 (위로 스크롤 시 이전 내용 로드)
+> 반환 순서는 항상 오래된 순 (화면 표시용)
 
 **Response** `200 OK`
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": "message-doc-id",
-      "roomId": "uid1_uid2_itemId",
-      "senderId": "uid1",
-      "content": "안녕하세요, 아직 판매 중인가요?",
-      "createdAt": 1716000000000
-    }
-  ],
+  "data": {
+    "items": [
+      {
+        "id": "message-doc-id",
+        "roomId": "uid1_uid2_itemId",
+        "senderId": "uid1",
+        "content": "안녕하세요, 아직 판매 중인가요?",
+        "createdAt": 1716000000000
+      }
+    ],
+    "nextCursor": 1716000000000,
+    "hasNext": true
+  },
   "message": null
 }
 ```

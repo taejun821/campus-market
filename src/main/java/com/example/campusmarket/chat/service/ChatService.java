@@ -4,6 +4,7 @@ import com.example.campusmarket.chat.dto.MessageRequest;
 import com.example.campusmarket.chat.dto.MessageResponse;
 import com.example.campusmarket.chat.dto.RoomRequest;
 import com.example.campusmarket.chat.dto.RoomResponse;
+import com.example.campusmarket.common.dto.PageResponse;
 import com.example.campusmarket.common.exception.ForbiddenException;
 import com.example.campusmarket.common.exception.NotFoundException;
 import com.google.cloud.Timestamp;
@@ -12,6 +13,8 @@ import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
+import java.util.ArrayList;
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -81,8 +84,14 @@ public class ChatService {
             .toList();
     }
 
-    // 메시지 조회 - 참여자만 가능, 최대 100개 오래된 순
-    public List<MessageResponse> getMessages(String roomId, String uid) throws Exception {
+    /**
+     * 메시지 조회 - 커서 기반 페이지네이션
+     * - 참여자만 가능
+     * - 기본: 최신 메시지부터 size개 반환 (cursor 없으면 첫 로드)
+     * - cursor 있으면: 해당 시점보다 오래된 메시지 반환 (위로 스크롤 시 이전 메시지 로드)
+     * - 반환 순서: 오래된 순 (화면 표시용)
+     */
+    public PageResponse<MessageResponse> getMessages(String roomId, String uid, Long cursor, int size) throws Exception {
         DocumentSnapshot room = firestore.collection(ROOMS).document(roomId).get().get();
         if (!room.exists()) throw new NotFoundException("존재하지 않는 채팅방입니다.");
 
@@ -92,13 +101,18 @@ public class ChatService {
             throw new ForbiddenException("채팅방 참여자만 메시지를 조회할 수 있습니다.");
         }
 
-        return firestore.collection(MESSAGES)
+        // 최신순으로 내려받아 커서 이전 메시지 로드 (위로 스크롤)
+        Query query = firestore.collection(MESSAGES)
             .whereEqualTo("roomId", roomId)
-            .orderBy("createdAt", Query.Direction.ASCENDING) // 오래된 메시지가 위에
-            .limit(100)
-            .get().get()
-            .getDocuments()
-            .stream()
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(size + 1);
+
+        if (cursor != null) {
+            Timestamp ts = Timestamp.ofTimeSecondsAndNanos(cursor / 1000, (int)((cursor % 1000) * 1_000_000));
+            query = query.startAfter(ts);
+        }
+
+        List<MessageResponse> all = query.get().get().getDocuments().stream()
             .map(doc -> {
                 Timestamp createdAt = doc.getTimestamp("createdAt");
                 return new MessageResponse(
@@ -108,6 +122,17 @@ public class ChatService {
                 );
             })
             .toList();
+
+        boolean hasNext = all.size() > size;
+        List<MessageResponse> items = hasNext ? all.subList(0, size) : all;
+        // nextCursor = 가장 오래된 메시지의 createdAt (다음 "더 보기" 요청 시 사용)
+        Long nextCursor = hasNext ? items.get(items.size() - 1).createdAt() : null;
+
+        // 화면 표시용으로 오래된 순 정렬
+        List<MessageResponse> chronological = new ArrayList<>(items);
+        Collections.reverse(chronological);
+
+        return new PageResponse<>(chronological, nextCursor, hasNext);
     }
 
     /**

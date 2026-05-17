@@ -6,6 +6,7 @@ import com.example.campusmarket.chat.dto.RoomRequest;
 import com.example.campusmarket.chat.dto.RoomResponse;
 import com.example.campusmarket.chat.service.ChatService;
 import com.example.campusmarket.common.dto.ApiResponse;
+import com.example.campusmarket.common.dto.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -53,12 +55,16 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponse.success(chatService.getMyRooms(uid(auth))));
     }
 
-    // 채팅방 메시지 목록 조회 - 참여자만 가능, 최대 100개 오래된 순
+    // 메시지 조회 - 커서 기반 페이지네이션, ?cursor=&size=30
+    // cursor 없으면 최신 메시지부터, cursor 있으면 그 이전 메시지 (위로 스크롤 시 이전 메시지 로드)
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<ApiResponse<List<MessageResponse>>> getMessages(
-        @PathVariable String roomId, Authentication auth
+    public ResponseEntity<ApiResponse<PageResponse<MessageResponse>>> getMessages(
+        @PathVariable String roomId,
+        Authentication auth,
+        @RequestParam(required = false) Long cursor,
+        @RequestParam(defaultValue = "30") int size
     ) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(chatService.getMessages(roomId, uid(auth))));
+        return ResponseEntity.ok(ApiResponse.success(chatService.getMessages(roomId, uid(auth), cursor, size)));
     }
 
     // 메시지 전송 - 참여자만 가능, 전송 후 채팅방 lastMessage 업데이트, 성공 시 201 Created

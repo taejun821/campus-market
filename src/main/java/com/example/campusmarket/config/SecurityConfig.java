@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -73,7 +74,7 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 미사용
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll() // 회원가입·로그인은 토큰 없이 허용
+                .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll() // 회원가입·로그인만 토큰 없이 허용
                 .anyRequest().authenticated()               // 나머지는 JWT 필수
             )
             // UsernamePasswordAuthenticationFilter 앞에 JWT 필터 삽입
