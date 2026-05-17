@@ -50,7 +50,7 @@ public class LostItemService {
         data.put("region", region);
         data.put("imageUrls", request.imageUrls() != null ? request.imageUrls() : List.of());
         data.put("status", "LOST");
-        data.put("userid", uid);
+        data.put("userId", uid);
         data.put("viewCount", 0L);
         data.put("likeCount", 0L);
         data.put("createdAt", FieldValue.serverTimestamp());
@@ -90,7 +90,7 @@ public class LostItemService {
     // 내가 등록한 분실물 목록 - 최신순
     public List<LostItemResponse> findMyItems(String uid) throws Exception {
         return firestore.collection(COLLECTION)
-            .whereEqualTo("userid", uid)
+            .whereEqualTo("userId", uid)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .get().get()
             .getDocuments()
@@ -110,7 +110,7 @@ public class LostItemService {
         DocumentReference ref = firestore.collection(COLLECTION).document(id);
         DocumentSnapshot doc = ref.get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 분실물입니다.");
-        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 분실물만 수정할 수 있습니다.");
+        if (!uid.equals(doc.getString("userId"))) throw new ForbiddenException("본인이 등록한 분실물만 수정할 수 있습니다.");
 
         Map<String, Object> updates = new HashMap<>();
         if (request.title() != null)       updates.put("title", request.title());
@@ -128,7 +128,7 @@ public class LostItemService {
         DocumentReference ref = firestore.collection(COLLECTION).document(id);
         DocumentSnapshot doc = ref.get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 분실물입니다.");
-        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 분실물만 상태를 변경할 수 있습니다.");
+        if (!uid.equals(doc.getString("userId"))) throw new ForbiddenException("본인이 등록한 분실물만 상태를 변경할 수 있습니다.");
 
         ref.update("status", request.status()).get();
         return toResponse(ref.get().get());
@@ -138,7 +138,7 @@ public class LostItemService {
     public void delete(String id, String uid) throws Exception {
         DocumentSnapshot doc = firestore.collection(COLLECTION).document(id).get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 분실물입니다.");
-        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 분실물만 삭제할 수 있습니다.");
+        if (!uid.equals(doc.getString("userId"))) throw new ForbiddenException("본인이 등록한 분실물만 삭제할 수 있습니다.");
         firestore.collection(COLLECTION).document(id).delete().get();
     }
 
@@ -198,7 +198,7 @@ public class LostItemService {
             doc.getString("region"),
             (List<String>) doc.get("imageUrls"),
             status != null ? status : "LOST",
-            doc.getString("userid"),
+            doc.getString("userId"),
             createdAt != null ? createdAt.toDate().getTime() : null,
             viewCount != null ? viewCount : 0L,
             likeCount != null ? likeCount : 0L

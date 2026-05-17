@@ -53,19 +53,19 @@ public class LostItemController {
         Authentication auth
     ) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success(lostItemService.create(request, getUid(auth))));
+            .body(ApiResponse.success(lostItemService.create(request, uid(auth))));
     }
 
     // 분실물 목록 조회 - 로그인 유저와 동일 지역 게시물만, 최신순 정렬
     @GetMapping
     public ResponseEntity<ApiResponse<List<LostItemResponse>>> findAll(Authentication auth) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(lostItemService.findAll(getUid(auth))));
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.findAll(uid(auth))));
     }
 
     // 내가 등록한 분실물 목록
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<LostItemResponse>>> findMyItems(Authentication auth) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(lostItemService.findMyItems(getUid(auth))));
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.findMyItems(uid(auth))));
     }
 
     // 분실물 단건 조회 - 조회할 때마다 viewCount 1 증가
@@ -81,7 +81,7 @@ public class LostItemController {
         @RequestBody @Valid LostItemUpdateRequest request,
         Authentication auth
     ) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(lostItemService.update(id, getUid(auth), request)));
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.update(id, uid(auth), request)));
     }
 
     // 분실물 상태 변경 - 등록자 본인만 가능 (LOST: 분실중 / FOUND: 찾았음)
@@ -91,7 +91,7 @@ public class LostItemController {
         @RequestBody @Valid LostItemStatusRequest request,
         Authentication auth
     ) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(lostItemService.updateStatus(id, getUid(auth), request)));
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.updateStatus(id, uid(auth), request)));
     }
 
     // 분실물 삭제 - 등록자 본인만 가능 (ForbiddenException 발생 가능)
@@ -100,7 +100,7 @@ public class LostItemController {
         @PathVariable String id,
         Authentication auth
     ) throws Exception {
-        lostItemService.delete(id, getUid(auth));
+        lostItemService.delete(id, uid(auth));
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -109,11 +109,11 @@ public class LostItemController {
     public ResponseEntity<ApiResponse<LikeResponse>> toggleLike(
         @PathVariable String id, Authentication auth
     ) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(lostItemService.toggleLike(id, getUid(auth))));
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.toggleLike(id, uid(auth))));
     }
 
     // JWT principal에서 uid 추출
-    private String getUid(Authentication auth) {
+    private String uid(Authentication auth) {
         return (String) auth.getPrincipal();
     }
 }

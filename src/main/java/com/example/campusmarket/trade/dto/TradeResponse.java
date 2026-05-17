@@ -13,7 +13,7 @@ import java.util.List;
  * @param region      지역 (서울 / 경기 / 인천 등) — 등록자 가입 시 지역 자동 적용
  * @param imageUrls   이미지 URL 목록
  * @param status      거래 상태 (SELLING: 판매중 / RESERVED: 예약중 / SOLD: 판매완료)
- * @param userid      등록자 uid
+ * @param userId      등록자 uid
  * @param viewCount   조회수
  * @param likeCount   좋아요 수
  * @param createdAt   등록 시각 (Unix 밀리초)
@@ -27,7 +27,7 @@ public record TradeResponse(
     String region,
     List<String> imageUrls,
     String status,
-    String userid,
+    String userId,
     Long viewCount,
     Long likeCount,
     Long createdAt

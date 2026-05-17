@@ -51,7 +51,7 @@ public class TradeService {
         data.put("region", region);
         data.put("imageUrls", request.imageUrls() != null ? request.imageUrls() : List.of());
         data.put("status", "SELLING");
-        data.put("userid", uid);
+        data.put("userId", uid);
         data.put("viewCount", 0L);
         data.put("likeCount", 0L);
         data.put("createdAt", FieldValue.serverTimestamp());
@@ -82,7 +82,7 @@ public class TradeService {
     // 내가 등록한 목록 - 최신순
     public List<TradeResponse> findMyItems(String uid) throws Exception {
         return firestore.collection(COLLECTION)
-            .whereEqualTo("userid", uid)
+            .whereEqualTo("userId", uid)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .get().get()
             .getDocuments()
@@ -111,7 +111,7 @@ public class TradeService {
         DocumentReference ref = firestore.collection(COLLECTION).document(id);
         DocumentSnapshot doc = ref.get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 중고거래 게시물입니다.");
-        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 게시물만 수정할 수 있습니다.");
+        if (!uid.equals(doc.getString("userId"))) throw new ForbiddenException("본인이 등록한 게시물만 수정할 수 있습니다.");
 
         Map<String, Object> updates = new HashMap<>();
         if (request.title() != null)       updates.put("title", request.title());
@@ -128,7 +128,7 @@ public class TradeService {
     public void delete(String id, String uid) throws Exception {
         DocumentSnapshot doc = firestore.collection(COLLECTION).document(id).get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 중고거래 게시물입니다.");
-        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 게시물만 삭제할 수 있습니다.");
+        if (!uid.equals(doc.getString("userId"))) throw new ForbiddenException("본인이 등록한 게시물만 삭제할 수 있습니다.");
         firestore.collection(COLLECTION).document(id).delete().get();
     }
 
@@ -137,7 +137,7 @@ public class TradeService {
         DocumentReference ref = firestore.collection(COLLECTION).document(id);
         DocumentSnapshot doc = ref.get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 중고거래 게시물입니다.");
-        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 게시물만 수정할 수 있습니다.");
+        if (!uid.equals(doc.getString("userId"))) throw new ForbiddenException("본인이 등록한 게시물만 수정할 수 있습니다.");
         ref.update("status", request.status()).get();
         return toResponse(ref.get().get());
     }
@@ -192,7 +192,7 @@ public class TradeService {
             doc.getString("region"),
             (List<String>) doc.get("imageUrls"),
             doc.getString("status"),
-            doc.getString("userid"),
+            doc.getString("userId"),
             viewCount != null ? viewCount : 0L,
             likeCount != null ? likeCount : 0L,
             createdAt != null ? createdAt.toDate().getTime() : null

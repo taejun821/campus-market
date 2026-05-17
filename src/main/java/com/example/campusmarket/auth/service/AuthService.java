@@ -67,7 +67,7 @@ public class AuthService {
         userData.put("university", request.university());
         userData.put("region", request.region());
         userData.put("password", passwordEncoder.encode(request.password())); // 평문 저장 금지
-        userData.put("userid", uid);
+        userData.put("userId", uid);
         userData.put("createdAt", FieldValue.serverTimestamp());
         firestore.collection("users").document(uid).set(userData).get();
 
@@ -99,7 +99,7 @@ public class AuthService {
             throw new BadRequestException("비밀번호가 올바르지 않습니다.");
         }
 
-        String uid = doc.getString("userid");
+        String uid = doc.getString("userId");
         Timestamp createdAt = doc.getTimestamp("createdAt");
 
         return new UserResponse(
