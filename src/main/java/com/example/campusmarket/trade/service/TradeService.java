@@ -1,11 +1,13 @@
 package com.example.campusmarket.trade.service;
 
+import com.example.campusmarket.common.exception.BadRequestException;
 import com.example.campusmarket.common.exception.ForbiddenException;
 import com.example.campusmarket.common.exception.NotFoundException;
 import com.example.campusmarket.lostitem.dto.LikeResponse;
 import com.example.campusmarket.trade.dto.TradeRequest;
 import com.example.campusmarket.trade.dto.TradeResponse;
 import com.example.campusmarket.trade.dto.TradeStatusRequest;
+import com.example.campusmarket.trade.dto.TradeUpdateRequest;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -72,13 +74,49 @@ public class TradeService {
             .toList();
     }
 
+    // 내가 등록한 목록 - 최신순
+    public List<TradeResponse> findMyItems(String uid) throws Exception {
+        return firestore.collection(COLLECTION)
+            .whereEqualTo("userid", uid)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .get().get()
+            .getDocuments()
+            .stream()
+            .map(this::toResponse)
+            .toList();
+    }
+
     // 단건 조회 - 조회할 때마다 viewCount 1 증가 (FieldValue.increment: 원자적 연산)
     public TradeResponse findById(String id) throws Exception {
         DocumentReference ref = firestore.collection(COLLECTION).document(id);
         DocumentSnapshot doc = ref.get().get();
         if (!doc.exists()) throw new NotFoundException("존재하지 않는 중고거래 게시물입니다.");
         ref.update("viewCount", FieldValue.increment(1)).get();
-        return toResponse(doc);
+        return toResponse(ref.get().get());
+    }
+
+    // 수정 - 등록자 본인만 가능, null이 아닌 필드만 업데이트
+    public TradeResponse update(String id, String uid, TradeUpdateRequest request) throws Exception {
+        if (request.title() == null && request.description() == null
+                && request.price() == null && request.location() == null
+                && request.imageUrls() == null) {
+            throw new BadRequestException("수정할 내용이 없습니다.");
+        }
+
+        DocumentReference ref = firestore.collection(COLLECTION).document(id);
+        DocumentSnapshot doc = ref.get().get();
+        if (!doc.exists()) throw new NotFoundException("존재하지 않는 중고거래 게시물입니다.");
+        if (!uid.equals(doc.getString("userid"))) throw new ForbiddenException("본인이 등록한 게시물만 수정할 수 있습니다.");
+
+        Map<String, Object> updates = new HashMap<>();
+        if (request.title() != null)       updates.put("title", request.title());
+        if (request.description() != null) updates.put("description", request.description());
+        if (request.price() != null)       updates.put("price", request.price());
+        if (request.location() != null)    updates.put("location", request.location());
+        if (request.imageUrls() != null)   updates.put("imageUrls", request.imageUrls());
+
+        ref.update(updates).get();
+        return toResponse(ref.get().get());
     }
 
     // 삭제 - 등록자 본인(userid 일치)만 가능

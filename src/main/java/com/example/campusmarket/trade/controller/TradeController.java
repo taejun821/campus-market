@@ -5,6 +5,7 @@ import com.example.campusmarket.lostitem.dto.LikeResponse;
 import com.example.campusmarket.trade.dto.TradeRequest;
 import com.example.campusmarket.trade.dto.TradeResponse;
 import com.example.campusmarket.trade.dto.TradeStatusRequest;
+import com.example.campusmarket.trade.dto.TradeUpdateRequest;
 import com.example.campusmarket.trade.service.TradeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -57,10 +59,26 @@ public class TradeController {
         return ResponseEntity.ok(ApiResponse.success(tradeService.findAll()));
     }
 
+    // 내가 등록한 중고거래 목록
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<TradeResponse>>> findMyItems(Authentication auth) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(tradeService.findMyItems(uid(auth))));
+    }
+
     // 중고거래 단건 조회 - 조회할 때마다 viewCount 1 증가
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TradeResponse>> findById(@PathVariable String id) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(tradeService.findById(id)));
+    }
+
+    // 중고거래 게시물 수정 - 등록자 본인만 가능, null 필드는 유지
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<TradeResponse>> update(
+        @PathVariable String id,
+        @RequestBody @Valid TradeUpdateRequest request,
+        Authentication auth
+    ) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(tradeService.update(id, uid(auth), request)));
     }
 
     // 중고거래 게시물 삭제 - 등록자 본인만 가능 (ForbiddenException 발생 가능)

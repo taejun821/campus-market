@@ -43,9 +43,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (jwtUtil.validateToken(token)) {
                 String uid = jwtUtil.extractUid(token);
                 // uid를 principal로 저장 → 컨트롤러에서 (String) auth.getPrincipal()로 꺼냄
-                UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(uid, null, List.of());
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                if (uid != null) {
+                    UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(uid, null, List.of());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
         }
 

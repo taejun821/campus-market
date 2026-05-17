@@ -86,6 +86,7 @@ public class ChatService {
         DocumentSnapshot room = firestore.collection(ROOMS).document(roomId).get().get();
         if (!room.exists()) throw new NotFoundException("존재하지 않는 채팅방입니다.");
 
+        @SuppressWarnings("unchecked")
         List<String> participants = (List<String>) room.get("participants");
         if (participants == null || !participants.contains(uid)) {
             throw new ForbiddenException("채팅방 참여자만 메시지를 조회할 수 있습니다.");
@@ -119,6 +120,7 @@ public class ChatService {
         DocumentSnapshot room = roomRef.get().get();
         if (!room.exists()) throw new NotFoundException("존재하지 않는 채팅방입니다.");
 
+        @SuppressWarnings("unchecked")
         List<String> participants = (List<String>) room.get("participants");
         if (participants == null || !participants.contains(uid)) {
             throw new ForbiddenException("채팅방 참여자만 메시지를 보낼 수 있습니다.");
