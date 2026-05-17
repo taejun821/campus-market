@@ -10,6 +10,7 @@ import java.util.List;
  * @param description 상품 설명
  * @param price       가격
  * @param location    거래 희망 장소
+ * @param region      지역 (서울 / 경기 / 인천 등) — 등록자 가입 시 지역 자동 적용
  * @param imageUrls   이미지 URL 목록
  * @param status      거래 상태 (SELLING: 판매중 / RESERVED: 예약중 / SOLD: 판매완료)
  * @param userid      등록자 uid
@@ -23,6 +24,7 @@ public record TradeResponse(
     String description,
     Long price,
     String location,
+    String region,
     List<String> imageUrls,
     String status,
     String userid,

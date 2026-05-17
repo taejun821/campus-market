@@ -39,13 +39,16 @@ public class TradeService {
 
     private final Firestore firestore;
 
-    // 중고거래 게시물 등록 - 초기 상태 SELLING, viewCount·likeCount = 0
+    // 중고거래 게시물 등록 - 등록자의 지역을 자동으로 읽어 저장, 초기 상태 SELLING
     public TradeResponse create(TradeRequest request, String uid) throws Exception {
+        String region = getUserRegion(uid);
+
         Map<String, Object> data = new HashMap<>();
         data.put("title", request.title());
         data.put("description", request.description());
         data.put("price", request.price());
         data.put("location", request.location());
+        data.put("region", region);
         data.put("imageUrls", request.imageUrls() != null ? request.imageUrls() : List.of());
         data.put("status", "SELLING");
         data.put("userid", uid);
@@ -58,14 +61,16 @@ public class TradeService {
 
         return new TradeResponse(
             ref.getId(), request.title(), request.description(),
-            request.price(), request.location(), request.imageUrls(),
+            request.price(), request.location(), region, request.imageUrls(),
             "SELLING", uid, 0L, 0L, null
         );
     }
 
-    // 목록 조회 - 등록일 최신순 정렬
-    public List<TradeResponse> findAll() throws Exception {
+    // 목록 조회 - 로그인 유저와 동일 지역 게시물만, 최신순 정렬
+    public List<TradeResponse> findAll(String uid) throws Exception {
+        String region = getUserRegion(uid);
         return firestore.collection(COLLECTION)
+            .whereEqualTo("region", region)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .get().get()
             .getDocuments()
@@ -184,6 +189,7 @@ public class TradeService {
             doc.getString("description"),
             doc.getLong("price"),
             doc.getString("location"),
+            doc.getString("region"),
             (List<String>) doc.get("imageUrls"),
             doc.getString("status"),
             doc.getString("userid"),
@@ -191,5 +197,14 @@ public class TradeService {
             likeCount != null ? likeCount : 0L,
             createdAt != null ? createdAt.toDate().getTime() : null
         );
+    }
+
+    // users 컬렉션에서 uid에 해당하는 사용자의 지역 조회
+    private String getUserRegion(String uid) throws Exception {
+        DocumentSnapshot userDoc = firestore.collection("users").document(uid).get().get();
+        if (!userDoc.exists()) throw new com.example.campusmarket.common.exception.NotFoundException("존재하지 않는 사용자입니다.");
+        String region = userDoc.getString("region");
+        if (region == null) throw new com.example.campusmarket.common.exception.BadRequestException("지역 정보가 없습니다. 프로필을 업데이트해 주세요.");
+        return region;
     }
 }

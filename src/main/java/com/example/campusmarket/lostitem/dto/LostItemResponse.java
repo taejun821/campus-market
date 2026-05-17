@@ -10,6 +10,7 @@ import java.util.List;
  * @param description 분실물 설명
  * @param location    분실 장소
  * @param lostDate    분실 날짜
+ * @param region      지역 (서울 / 경기 / 인천 등) — 등록자 가입 시 지역 자동 적용
  * @param imageUrls   이미지 URL 목록
  * @param status      분실물 상태 (LOST: 분실중 / FOUND: 찾았음)
  * @param userid      등록자 uid
@@ -23,6 +24,7 @@ public record LostItemResponse(
     String description,
     String location,
     String lostDate,
+    String region,
     List<String> imageUrls,
     String status,
     String userid,

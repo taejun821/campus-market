@@ -56,10 +56,10 @@ public class LostItemController {
             .body(ApiResponse.success(lostItemService.create(request, getUid(auth))));
     }
 
-    // 분실물 목록 조회 - 등록일 최신순 정렬
+    // 분실물 목록 조회 - 로그인 유저와 동일 지역 게시물만, 최신순 정렬
     @GetMapping
-    public ResponseEntity<ApiResponse<List<LostItemResponse>>> findAll() throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(lostItemService.findAll()));
+    public ResponseEntity<ApiResponse<List<LostItemResponse>>> findAll(Authentication auth) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(lostItemService.findAll(getUid(auth))));
     }
 
     // 내가 등록한 분실물 목록

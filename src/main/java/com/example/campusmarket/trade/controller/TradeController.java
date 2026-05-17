@@ -53,10 +53,10 @@ public class TradeController {
             .body(ApiResponse.success(tradeService.create(request, uid(auth))));
     }
 
-    // 중고거래 목록 조회 - 등록일 최신순 정렬
+    // 중고거래 목록 조회 - 로그인 유저와 동일 지역 게시물만, 최신순 정렬
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TradeResponse>>> findAll() throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(tradeService.findAll()));
+    public ResponseEntity<ApiResponse<List<TradeResponse>>> findAll(Authentication auth) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(tradeService.findAll(uid(auth))));
     }
 
     // 내가 등록한 중고거래 목록

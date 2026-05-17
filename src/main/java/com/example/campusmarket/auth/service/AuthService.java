@@ -65,12 +65,13 @@ public class AuthService {
         userData.put("email", request.email());
         userData.put("name", request.name());
         userData.put("university", request.university());
+        userData.put("region", request.region());
         userData.put("password", passwordEncoder.encode(request.password())); // 평문 저장 금지
         userData.put("userid", uid);
         userData.put("createdAt", FieldValue.serverTimestamp());
         firestore.collection("users").document(uid).set(userData).get();
 
-        return new UserResponse(uid, request.email(), request.name(), request.university(), null, jwtUtil.generateToken(uid));
+        return new UserResponse(uid, request.email(), request.name(), request.university(), request.region(), null, jwtUtil.generateToken(uid));
     }
 
     /**
@@ -106,6 +107,7 @@ public class AuthService {
             doc.getString("email"),
             doc.getString("name"),
             doc.getString("university"),
+            doc.getString("region"),
             createdAt != null ? createdAt.toDate().getTime() : null,
             jwtUtil.generateToken(uid)
         );
