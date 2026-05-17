@@ -76,22 +76,30 @@ public class ImageService {
         return new ImageUploadResponse(url);
     }
 
+    /**
+     * 파일 앞부분의 매직 바이트를 읽어 실제 포맷이 MIME 타입과 일치하는지 검증한다.
+     * 클라이언트가 Content-Type 헤더를 조작해 악성 파일을 업로드하는 것을 방지한다.
+     * WebP는 RIFF 컨테이너를 사용하므로 오프셋 0(RIFF)과 오프셋 8(WEBP)을 함께 확인한다.
+     */
     private void validateMagicBytes(byte[] bytes, String contentType) {
         if (bytes.length < 12) throw new BadRequestException("파일이 손상되었습니다.");
 
         if ("image/webp".equals(contentType)) {
+            // WebP 구조: [RIFF(4)] [파일크기(4)] [WEBP(4)] ...
             if (!startsWith(bytes, WEBP_RIFF, 0) || !startsWith(bytes, WEBP_MARKER, 8)) {
                 throw new BadRequestException("파일 내용이 선언된 형식과 일치하지 않습니다.");
             }
             return;
         }
 
+        // JPEG·PNG·GIF는 파일 시작 바이트가 고정 시그니처
         byte[] expected = MAGIC_BYTES.get(contentType);
         if (expected != null && !startsWith(bytes, expected, 0)) {
             throw new BadRequestException("파일 내용이 선언된 형식과 일치하지 않습니다.");
         }
     }
 
+    // data[offset] 부터 prefix 길이만큼 바이트가 일치하는지 확인
     private boolean startsWith(byte[] data, byte[] prefix, int offset) {
         if (data.length < offset + prefix.length) return false;
         for (int i = 0; i < prefix.length; i++) {

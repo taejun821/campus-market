@@ -42,8 +42,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = header.substring(7); // "Bearer " 이후 토큰 값만 추출
             if (jwtUtil.validateToken(token)) {
                 String uid = jwtUtil.extractUid(token);
-                // uid를 principal로 저장 → 컨트롤러에서 (String) auth.getPrincipal()로 꺼냄
+                // subject가 없는 비정상 토큰 방어 — uid가 있을 때만 인증 처리
                 if (uid != null) {
+                    // uid를 principal로 저장 → 컨트롤러에서 (String) auth.getPrincipal()로 꺼냄
                     UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(uid, null, List.of());
                     SecurityContextHolder.getContext().setAuthentication(auth);

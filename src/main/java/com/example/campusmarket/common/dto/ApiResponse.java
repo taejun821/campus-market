@@ -17,6 +17,7 @@ public record ApiResponse<T>(boolean success, T data, String message) {
         return new ApiResponse<>(true, data, null);
     }
 
+    // success()의 별칭 — 팀원 코드와의 호환성을 위해 추가
     public static <T> ApiResponse<T> ok(T data) {
         return success(data);
     }
