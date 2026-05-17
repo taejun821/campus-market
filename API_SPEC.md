@@ -14,6 +14,26 @@ Authorization: Bearer {token}
 ```
 로그인/회원가입 API를 제외한 모든 API에 필요합니다.
 
+### 페이지네이션 (커서 기반)
+목록 조회 API는 커서 기반 페이지네이션을 사용합니다.
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "nextCursor": 1716000000000,
+    "hasNext": true
+  }
+}
+```
+
+| 필드 | 설명 |
+|------|------|
+| items | 현재 페이지 항목 목록 |
+| nextCursor | 다음 페이지 요청 시 `cursor` 파라미터에 전달할 값 (다음 페이지 없으면 null) |
+| hasNext | 다음 페이지 존재 여부 |
+
 ### 공통 에러 응답
 | HTTP | 설명 |
 |------|------|
@@ -115,6 +135,7 @@ Authorization: Bearer {token}
     "email": "example@hongik.ac.kr",
     "name": "홍길동",
     "university": "홍익대학교",
+    "region": "서울",
     "createdAt": 1716000000000
   },
   "message": null
@@ -126,12 +147,22 @@ Authorization: Bearer {token}
 ### 2-2. 내 프로필 수정
 `PUT /api/profile`
 
-**Request Body**
+> null인 필드는 수정하지 않음 (부분 수정 허용)
+
+**Request Body** (변경할 필드만 포함)
 ```json
 {
-  "name": "새이름"
+  "name": "새이름",
+  "university": "새대학교",
+  "region": "경기"
 }
 ```
+
+| 필드 | 타입 | 필수 | 제한 |
+|------|------|------|------|
+| name | String | ❌ | 최대 50자 |
+| university | String | ❌ | 최대 100자 |
+| region | String | ❌ | 최대 30자 |
 
 **Response** `200 OK` — 수정된 프로필 반환
 
@@ -175,7 +206,12 @@ Authorization: Bearer {token}
 ## 4. 중고거래 (Trade)
 
 > 모든 요청에 `Authorization` 헤더 필요
-> 목록 조회는 로그인 유저와 **동일 지역** 게시물만 반환됩니다.
+> 목록 조회/검색은 로그인 유저와 **동일 지역** 게시물만 반환됩니다.
+
+### 카테고리 목록
+`전자기기` / `의류` / `도서` / `생활용품` / `식품` / `스포츠` / `기타`
+
+---
 
 ### 4-1. 게시물 등록
 `POST /api/trade`
@@ -187,6 +223,7 @@ Authorization: Bearer {token}
   "description": "거의 새것, 사용 3개월",
   "price": 500000,
   "location": "신촌역 2번 출구",
+  "category": "전자기기",
   "imageUrls": ["https://storage.googleapis.com/..."]
 }
 ```
@@ -197,6 +234,7 @@ Authorization: Bearer {token}
 | description | String | ✅ | 최대 2000자 |
 | price | Long | ✅ | 0 이상 (무료 나눔 시 0) |
 | location | String | ✅ | 최대 200자 (거래 희망 장소) |
+| category | String | ✅ | 카테고리 목록 중 하나 |
 | imageUrls | String[] | ❌ | 최대 10개 |
 
 **Response** `201 Created`
@@ -210,6 +248,7 @@ Authorization: Bearer {token}
     "price": 500000,
     "location": "신촌역 2번 출구",
     "region": "서울",
+    "category": "전자기기",
     "imageUrls": ["https://..."],
     "status": "SELLING",
     "userId": "uuid-string",
@@ -225,21 +264,61 @@ Authorization: Bearer {token}
 
 ---
 
-### 4-2. 게시물 목록 조회 (지역 필터)
+### 4-2. 게시물 목록 조회 (지역 필터 + 페이지네이션)
 `GET /api/trade`
 
-**Response** `200 OK` — 로그인 유저와 같은 지역의 게시물 목록 (최신순)
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| category | String | ❌ | 카테고리 필터 (예: `전자기기`) |
+| cursor | Long | ❌ | 이전 응답의 `nextCursor` 값 (첫 페이지는 생략) |
+| size | int | ❌ | 페이지 크기 (기본값: 20) |
+
+**Response** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "nextCursor": 1716000000000,
+    "hasNext": true
+  },
+  "message": null
+}
+```
 
 ---
 
-### 4-3. 내가 등록한 게시물 목록
+### 4-3. 게시물 검색
+`GET /api/trade/search`
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| keyword | String | ✅ | 제목 검색 키워드 |
+| category | String | ❌ | 카테고리 필터 |
+
+**Response** `200 OK` — 동일 지역 내 키워드 포함 게시물 목록
+
+---
+
+### 4-4. 내가 등록한 게시물 목록
 `GET /api/trade/my`
 
 **Response** `200 OK` — 내가 올린 모든 게시물 목록 (최신순)
 
 ---
 
-### 4-4. 게시물 단건 조회
+### 4-5. 내가 좋아요한 게시물 목록
+`GET /api/trade/liked`
+
+**Response** `200 OK` — 내가 좋아요한 중고거래 게시물 목록
+
+---
+
+### 4-6. 게시물 단건 조회
 `GET /api/trade/{id}`
 
 > 조회할 때마다 `viewCount` 1 증가
@@ -248,7 +327,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 4-5. 게시물 수정
+### 4-7. 게시물 수정
 `PUT /api/trade/{id}`
 
 > 등록자 본인만 가능. 보내지 않은 필드(null)는 유지됩니다.
@@ -257,7 +336,8 @@ Authorization: Bearer {token}
 ```json
 {
   "title": "수정된 제목",
-  "price": 450000
+  "price": 450000,
+  "category": "기타"
 }
 ```
 
@@ -267,13 +347,14 @@ Authorization: Bearer {token}
 | description | String | ❌ | 최대 2000자 |
 | price | Long | ❌ | 0 이상 |
 | location | String | ❌ | 최대 200자 |
+| category | String | ❌ | 카테고리 목록 중 하나 |
 | imageUrls | String[] | ❌ | 최대 10개 |
 
 **Response** `200 OK` — 수정된 게시물 반환
 
 ---
 
-### 4-6. 게시물 삭제
+### 4-8. 게시물 삭제
 `DELETE /api/trade/{id}`
 
 > 등록자 본인만 가능
@@ -285,7 +366,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 4-7. 거래 상태 변경
+### 4-9. 거래 상태 변경
 `PATCH /api/trade/{id}/status`
 
 > 등록자 본인만 가능
@@ -305,7 +386,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 4-8. 좋아요 토글
+### 4-10. 좋아요 토글
 `POST /api/trade/{id}/like`
 
 > 이미 좋아요 → 취소 / 없으면 → 추가
@@ -327,7 +408,7 @@ Authorization: Bearer {token}
 ## 5. 분실물 (Lost Item)
 
 > 모든 요청에 `Authorization` 헤더 필요
-> 목록 조회는 로그인 유저와 **동일 지역** 게시물만 반환됩니다.
+> 목록 조회/검색은 로그인 유저와 **동일 지역** 게시물만 반환됩니다.
 
 ### 5-1. 분실물 등록
 `POST /api/lost-items`
@@ -375,21 +456,59 @@ Authorization: Bearer {token}
 
 ---
 
-### 5-2. 분실물 목록 조회 (지역 필터)
+### 5-2. 분실물 목록 조회 (지역 필터 + 페이지네이션)
 `GET /api/lost-items`
 
-**Response** `200 OK` — 로그인 유저와 같은 지역의 분실물 목록 (최신순)
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| cursor | Long | ❌ | 이전 응답의 `nextCursor` 값 (첫 페이지는 생략) |
+| size | int | ❌ | 페이지 크기 (기본값: 20) |
+
+**Response** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "nextCursor": 1716000000000,
+    "hasNext": true
+  },
+  "message": null
+}
+```
 
 ---
 
-### 5-3. 내가 등록한 분실물 목록
+### 5-3. 분실물 검색
+`GET /api/lost-items/search`
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| keyword | String | ✅ | 제목 검색 키워드 |
+
+**Response** `200 OK` — 동일 지역 내 키워드 포함 분실물 목록
+
+---
+
+### 5-4. 내가 등록한 분실물 목록
 `GET /api/lost-items/my`
 
 **Response** `200 OK` — 내가 올린 모든 분실물 목록 (최신순)
 
 ---
 
-### 5-4. 분실물 단건 조회
+### 5-5. 내가 좋아요한 분실물 목록
+`GET /api/lost-items/liked`
+
+**Response** `200 OK` — 내가 좋아요한 분실물 목록
+
+---
+
+### 5-6. 분실물 단건 조회
 `GET /api/lost-items/{id}`
 
 > 조회할 때마다 `viewCount` 1 증가
@@ -398,7 +517,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 5-5. 분실물 수정
+### 5-7. 분실물 수정
 `PUT /api/lost-items/{id}`
 
 > 등록자 본인만 가능. 보내지 않은 필드(null)는 유지됩니다.
@@ -423,7 +542,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 5-6. 분실물 상태 변경
+### 5-8. 분실물 상태 변경
 `PATCH /api/lost-items/{id}/status`
 
 > 등록자 본인만 가능
@@ -442,7 +561,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 5-7. 분실물 삭제
+### 5-9. 분실물 삭제
 `DELETE /api/lost-items/{id}`
 
 > 등록자 본인만 가능
@@ -454,7 +573,7 @@ Authorization: Bearer {token}
 
 ---
 
-### 5-8. 좋아요 토글
+### 5-10. 좋아요 토글
 `POST /api/lost-items/{id}/like`
 
 **Response** `200 OK`
@@ -584,8 +703,26 @@ Authorization: Bearer {token}
 1. `POST /api/images/upload` → 이미지 URL 획득
 2. `POST /api/trade` 또는 `POST /api/lost-items` — `imageUrls` 배열에 URL 담아 전송
 
+### 페이지네이션 사용 흐름
+1. `GET /api/trade` → `data.items` 렌더링, `data.nextCursor` 저장
+2. 스크롤 끝 도달 시 `GET /api/trade?cursor={nextCursor}` 재요청
+3. `data.hasNext == false` 이면 더 이상 요청하지 않음
+
 ### 채팅 시작 흐름
 1. 게시물 목록/단건 조회에서 `userId` 확인
 2. `POST /api/chat/rooms` — `targetUserId`, `itemId`, `itemType` 전송
 3. 반환된 `id`(roomId)로 `GET /api/chat/rooms/{roomId}/messages` 메시지 조회
 4. `POST /api/chat/rooms/{roomId}/messages` — 메시지 전송
+
+---
+
+## Firestore 복합 인덱스 설정 필요 항목
+
+> Firebase 콘솔 → Firestore → 인덱스 탭에서 생성해야 합니다.
+
+| 컬렉션 | 필드 | 용도 |
+|--------|------|------|
+| trade_items | region ASC, createdAt DESC | 목록 조회 |
+| trade_items | region ASC, category ASC, createdAt DESC | 카테고리 필터 목록 조회 |
+| lost_items | region ASC, createdAt DESC | 목록 조회 |
+| likes | type ASC, userId ASC | 좋아요한 목록 조회 |

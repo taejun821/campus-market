@@ -1,6 +1,7 @@
 package com.example.campusmarket.trade.controller;
 
 import com.example.campusmarket.common.dto.ApiResponse;
+import com.example.campusmarket.common.dto.PageResponse;
 import com.example.campusmarket.lostitem.dto.LikeResponse;
 import com.example.campusmarket.trade.dto.TradeRequest;
 import com.example.campusmarket.trade.dto.TradeResponse;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,12 +32,16 @@ import java.util.List;
  * Base URL: /api/trade
  * 모든 엔드포인트 JWT 인증 필요
  *
- * POST   /api/trade              - 중고거래 게시물 등록
- * GET    /api/trade              - 중고거래 목록 조회 (최신순)
- * GET    /api/trade/{id}         - 중고거래 단건 조회 (조회수 증가)
- * DELETE /api/trade/{id}         - 중고거래 게시물 삭제 (본인만)
- * PATCH  /api/trade/{id}/status  - 거래 상태 변경 (SELLING/RESERVED/SOLD, 본인만)
- * POST   /api/trade/{id}/like    - 좋아요 토글
+ * POST   /api/trade                  - 중고거래 게시물 등록
+ * GET    /api/trade                  - 중고거래 목록 조회 (지역 필터, 페이지네이션, 카테고리 필터)
+ * GET    /api/trade/search           - 제목 키워드 검색
+ * GET    /api/trade/my               - 내가 등록한 목록
+ * GET    /api/trade/liked            - 내가 좋아요한 목록
+ * GET    /api/trade/{id}             - 단건 조회 (조회수 증가)
+ * PUT    /api/trade/{id}             - 게시물 수정 (본인만)
+ * DELETE /api/trade/{id}             - 게시물 삭제 (본인만)
+ * PATCH  /api/trade/{id}/status      - 거래 상태 변경 (SELLING/RESERVED/SOLD, 본인만)
+ * POST   /api/trade/{id}/like        - 좋아요 토글
  */
 @RestController
 @RequestMapping("/api/trade")
@@ -53,16 +59,38 @@ public class TradeController {
             .body(ApiResponse.success(tradeService.create(request, uid(auth))));
     }
 
-    // 중고거래 목록 조회 - 로그인 유저와 동일 지역 게시물만, 최신순 정렬
+    // 중고거래 목록 조회 - 동일 지역 게시물, 커서 기반 페이지네이션
+    // ?category=전자기기&cursor=1716000000000&size=20
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TradeResponse>>> findAll(Authentication auth) throws Exception {
-        return ResponseEntity.ok(ApiResponse.success(tradeService.findAll(uid(auth))));
+    public ResponseEntity<ApiResponse<PageResponse<TradeResponse>>> findAll(
+        Authentication auth,
+        @RequestParam(required = false) String category,
+        @RequestParam(required = false) Long cursor,
+        @RequestParam(defaultValue = "20") int size
+    ) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(tradeService.findAll(uid(auth), category, cursor, size)));
+    }
+
+    // 제목 키워드 검색 - 지역 내 in-memory 필터, ?keyword=아이패드&category=전자기기
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<TradeResponse>>> search(
+        Authentication auth,
+        @RequestParam String keyword,
+        @RequestParam(required = false) String category
+    ) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(tradeService.search(uid(auth), keyword, category)));
     }
 
     // 내가 등록한 중고거래 목록
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<TradeResponse>>> findMyItems(Authentication auth) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(tradeService.findMyItems(uid(auth))));
+    }
+
+    // 내가 좋아요한 중고거래 목록
+    @GetMapping("/liked")
+    public ResponseEntity<ApiResponse<List<TradeResponse>>> findLikedItems(Authentication auth) throws Exception {
+        return ResponseEntity.ok(ApiResponse.success(tradeService.findLikedItems(uid(auth))));
     }
 
     // 중고거래 단건 조회 - 조회할 때마다 viewCount 1 증가

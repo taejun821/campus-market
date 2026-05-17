@@ -14,5 +14,6 @@ public record TradeUpdateRequest(
     @Size(max = 2000, message = "설명은 2000자 이하여야 합니다.") String description,
     @PositiveOrZero(message = "가격은 0 이상이어야 합니다.") Long price,
     @Size(max = 200, message = "거래 위치는 200자 이하여야 합니다.") String location,
+    String category,
     @Size(max = 10, message = "이미지는 최대 10개까지 업로드할 수 있습니다.") List<String> imageUrls
 ) {}

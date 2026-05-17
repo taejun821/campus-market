@@ -10,6 +10,7 @@ package com.example.campusmarket.profile.dto;
  * @param email      이메일 (공개 프로필 조회 시 null)
  * @param name       사용자 이름
  * @param university 소속 대학교
+ * @param region     지역 (예: 서울 / 경기 / 인천)
  * @param createdAt  가입 시각 (Unix 밀리초)
  */
 public record ProfileResponse(
@@ -17,5 +18,6 @@ public record ProfileResponse(
     String email,
     String name,
     String university,
+    String region,
     Long createdAt
 ) {}
