@@ -212,7 +212,7 @@ Authorization: Bearer {token}
     "region": "서울",
     "imageUrls": ["https://..."],
     "status": "SELLING",
-    "userid": "uuid-string",
+    "userId": "uuid-string",
     "viewCount": 0,
     "likeCount": 0,
     "createdAt": null
@@ -364,7 +364,7 @@ Authorization: Bearer {token}
     "region": "서울",
     "imageUrls": ["https://..."],
     "status": "LOST",
-    "userid": "uuid-string",
+    "userId": "uuid-string",
     "createdAt": null,
     "viewCount": 0,
     "likeCount": 0
@@ -585,7 +585,7 @@ Authorization: Bearer {token}
 2. `POST /api/trade` 또는 `POST /api/lost-items` — `imageUrls` 배열에 URL 담아 전송
 
 ### 채팅 시작 흐름
-1. 게시물 목록/단건 조회에서 `userid` 확인
+1. 게시물 목록/단건 조회에서 `userId` 확인
 2. `POST /api/chat/rooms` — `targetUserId`, `itemId`, `itemType` 전송
 3. 반환된 `id`(roomId)로 `GET /api/chat/rooms/{roomId}/messages` 메시지 조회
 4. `POST /api/chat/rooms/{roomId}/messages` — 메시지 전송
