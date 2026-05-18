@@ -1,6 +1,6 @@
 # Campus Market API 명세서
 
-> Base URL: `http://localhost:8080`
+> Base URL: `http://localhost:8081`
 > 모든 응답은 `{ "success": true/false, "data": {...}, "message": null/"오류메시지" }` 형태로 반환됩니다.
 
 ---
