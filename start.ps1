@@ -24,3 +24,8 @@ try {
 } catch {
     Write-Host "ngrok 주소 확인 실패. http://localhost:4040 에서 직접 확인하세요."
 }
+
+Write-Host ""
+Write-Host "종료하려면:"
+Write-Host "  서버 종료 : Get-Process -Name java  | Stop-Process -Force"
+Write-Host "  ngrok 종료: Get-Process -Name ngrok | Stop-Process -Force"
