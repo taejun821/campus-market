@@ -43,9 +43,13 @@ public class LostItemService {
 
     private final Firestore firestore;
 
-    // 분실물 등록 - 등록자의 지역을 자동으로 읽어 저장, 초기 상태 LOST
+    // 분실물 등록 - 등록자의 지역과 이름을 자동으로 읽어 저장, 초기 상태 LOST
     public LostItemResponse create(LostItemRequest request, String uid) throws Exception {
-        String region = getUserRegion(uid);
+        DocumentSnapshot userDoc = firestore.collection("users").document(uid).get().get();
+        if (!userDoc.exists()) throw new NotFoundException("존재하지 않는 사용자입니다.");
+        String region = userDoc.getString("region");
+        if (region == null) throw new BadRequestException("지역 정보가 없습니다. 프로필을 업데이트해 주세요.");
+        String userName = userDoc.getString("name");
 
         Map<String, Object> data = new HashMap<>();
         data.put("title", request.title());
@@ -56,6 +60,7 @@ public class LostItemService {
         data.put("imageUrls", request.imageUrls() != null ? request.imageUrls() : List.of());
         data.put("status", "LOST");
         data.put("userId", uid);
+        data.put("userName", userName);
         data.put("viewCount", 0L);
         data.put("likeCount", 0L);
         data.put("createdAt", FieldValue.serverTimestamp());
@@ -66,7 +71,7 @@ public class LostItemService {
         return new LostItemResponse(
             ref.getId(), request.title(), request.description(),
             request.location(), request.lostDate(), region, request.imageUrls(),
-            "LOST", uid, null, 0L, 0L
+            "LOST", uid, userName, null, 0L, 0L
         );
     }
 
@@ -266,6 +271,7 @@ public class LostItemService {
             (List<String>) doc.get("imageUrls"),
             status != null ? status : "LOST",
             doc.getString("userId"),
+            doc.getString("userName"),
             createdAt != null ? createdAt.toDate().getTime() : null,
             viewCount != null ? viewCount : 0L,
             likeCount != null ? likeCount : 0L

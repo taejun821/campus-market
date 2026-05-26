@@ -46,9 +46,13 @@ public class TradeService {
 
     private final Firestore firestore;
 
-    // 중고거래 게시물 등록 - 등록자의 지역을 자동으로 읽어 저장, 초기 상태 SELLING
+    // 중고거래 게시물 등록 - 등록자의 지역과 이름을 자동으로 읽어 저장, 초기 상태 SELLING
     public TradeResponse create(TradeRequest request, String uid) throws Exception {
-        String region = getUserRegion(uid);
+        DocumentSnapshot userDoc = firestore.collection("users").document(uid).get().get();
+        if (!userDoc.exists()) throw new NotFoundException("존재하지 않는 사용자입니다.");
+        String region = userDoc.getString("region");
+        if (region == null) throw new BadRequestException("지역 정보가 없습니다. 프로필을 업데이트해 주세요.");
+        String userName = userDoc.getString("name");
 
         Map<String, Object> data = new HashMap<>();
         data.put("title", request.title());
@@ -60,6 +64,7 @@ public class TradeService {
         data.put("imageUrls", request.imageUrls() != null ? request.imageUrls() : List.of());
         data.put("status", "SELLING");
         data.put("userId", uid);
+        data.put("userName", userName);
         data.put("viewCount", 0L);
         data.put("likeCount", 0L);
         data.put("createdAt", FieldValue.serverTimestamp());
@@ -70,7 +75,7 @@ public class TradeService {
         return new TradeResponse(
             ref.getId(), request.title(), request.description(),
             request.price(), request.location(), region, request.category(),
-            request.imageUrls(), "SELLING", uid, 0L, 0L, null
+            request.imageUrls(), "SELLING", uid, userName, 0L, 0L, null
         );
     }
 
@@ -281,6 +286,7 @@ public class TradeService {
             (List<String>) doc.get("imageUrls"),
             doc.getString("status"),
             doc.getString("userId"),
+            doc.getString("userName"),
             viewCount != null ? viewCount : 0L,
             likeCount != null ? likeCount : 0L,
             createdAt != null ? createdAt.toDate().getTime() : null

@@ -15,6 +15,7 @@ import java.util.List;
  * @param imageUrls   이미지 URL 목록
  * @param status      거래 상태 (SELLING: 판매중 / RESERVED: 예약중 / SOLD: 판매완료)
  * @param userId      등록자 uid
+ * @param userName    등록자 이름
  * @param viewCount   조회수
  * @param likeCount   좋아요 수
  * @param createdAt   등록 시각 (Unix 밀리초)
@@ -30,6 +31,7 @@ public record TradeResponse(
     List<String> imageUrls,
     String status,
     String userId,
+    String userName,
     Long viewCount,
     Long likeCount,
     Long createdAt
