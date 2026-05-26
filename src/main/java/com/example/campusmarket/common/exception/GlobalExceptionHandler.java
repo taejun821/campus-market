@@ -66,6 +66,7 @@ public class GlobalExceptionHandler {
     // 예상치 못한 서버 내부 오류 (상세 정보는 서버 로그로만 확인)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception e) {
+        e.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.error("서버 오류가 발생했습니다."));
     }
