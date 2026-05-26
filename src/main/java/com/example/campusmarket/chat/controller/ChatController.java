@@ -32,6 +32,7 @@ import java.util.List;
  * GET  /api/chat/rooms                      - 내가 참여한 채팅방 목록 조회 (최신순)
  * GET  /api/chat/rooms/{roomId}/messages    - 채팅방 메시지 목록 조회 (최대 100개, 오래된 순)
  * POST /api/chat/rooms/{roomId}/messages    - 메시지 전송
+ * POST /api/chat/rooms/{roomId}/read        - 읽음 처리 (내 unreadCount 0으로 리셋)
  */
 @RestController
 @RequestMapping("/api/chat")
@@ -76,6 +77,15 @@ public class ChatController {
     ) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(chatService.sendMessage(roomId, request, uid(auth))));
+    }
+
+    // 읽음 처리 - 채팅방 열 때 호출, 내 unreadCount를 0으로 리셋
+    @PostMapping("/rooms/{roomId}/read")
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+        @PathVariable String roomId, Authentication auth
+    ) throws Exception {
+        chatService.markAsRead(roomId, uid(auth));
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // JWT principal에서 uid 추출

@@ -674,7 +674,8 @@ Authorization: Bearer {token}
     "itemType": "trade",
     "lastMessage": null,
     "lastMessageAt": null,
-    "createdAt": 1716000000000
+    "createdAt": 1716000000000,
+    "unreadCount": 0
   },
   "message": null
 }
@@ -685,7 +686,9 @@ Authorization: Bearer {token}
 ### 6-2. 내 채팅방 목록 조회
 `GET /api/chat/rooms`
 
-**Response** `200 OK` — 내가 참여한 채팅방 목록 (최신 메시지 순)
+> `unreadCount`는 요청한 유저 기준 읽지 않은 메시지 수입니다.
+
+**Response** `200 OK` — 내가 참여한 채팅방 목록 (최신순), 각 방에 `unreadCount` 포함
 
 ---
 
@@ -730,7 +733,7 @@ Authorization: Bearer {token}
 ### 6-4. 메시지 전송
 `POST /api/chat/rooms/{roomId}/messages`
 
-> 참여자만 전송 가능. 전송 후 채팅방 `lastMessage` 자동 업데이트
+> 참여자만 전송 가능. 전송 후 채팅방 `lastMessage` 자동 업데이트, 상대방 `unreadCount` +1
 
 **Request Body**
 ```json
@@ -760,6 +763,19 @@ Authorization: Bearer {token}
 
 ---
 
+### 6-5. 읽음 처리
+`POST /api/chat/rooms/{roomId}/read`
+
+> 채팅방을 열 때 호출. 내 `unreadCount`를 0으로 리셋합니다.
+> 참여자만 가능.
+
+**Response** `200 OK`
+```json
+{ "success": true, "data": null, "message": null }
+```
+
+---
+
 ## 주요 흐름 요약
 
 ### 게시물 이미지 포함 등록 흐름
@@ -775,7 +791,12 @@ Authorization: Bearer {token}
 1. 게시물 목록/단건 조회에서 `userId` 확인
 2. `POST /api/chat/rooms` — `targetUserId`, `itemId`, `itemType` 전송
 3. 반환된 `id`(roomId)로 `GET /api/chat/rooms/{roomId}/messages` 메시지 조회
-4. `POST /api/chat/rooms/{roomId}/messages` — 메시지 전송
+4. `POST /api/chat/rooms/{roomId}/read` — 읽음 처리 (채팅방 진입 시 호출)
+5. `POST /api/chat/rooms/{roomId}/messages` — 메시지 전송
+
+### 읽음 처리 흐름
+- 채팅방 목록(`GET /api/chat/rooms`)에서 `unreadCount > 0`인 방에 뱃지 표시
+- 채팅방 진입 시 `POST /api/chat/rooms/{roomId}/read` 호출 → `unreadCount` 0으로 리셋
 
 ---
 

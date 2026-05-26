@@ -56,32 +56,48 @@ public class ChatService {
         DocumentSnapshot doc = ref.get().get();
 
         if (doc.exists()) {
-            return toRoomResponse(doc); // 기존 방 반환
+            return toRoomResponse(doc, uid);
         }
 
-        // 새 채팅방 생성
+        // 새 채팅방 생성 - unreadCount 맵으로 두 참여자의 읽지 않은 메시지 수 관리
         Map<String, Object> data = new HashMap<>();
         data.put("participants", List.of(uid, request.targetUserId()));
         data.put("itemId", request.itemId());
-        data.put("itemType", request.itemType()); // "lost" 또는 "trade"
+        data.put("itemType", request.itemType());
         data.put("lastMessage", null);
         data.put("lastMessageAt", null);
+        data.put("unreadCount", Map.of(uid, 0L, request.targetUserId(), 0L));
         data.put("createdAt", FieldValue.serverTimestamp());
         ref.set(data).get();
 
-        return toRoomResponse(ref.get().get());
+        return toRoomResponse(ref.get().get(), uid);
     }
 
     // 내가 참여한 채팅방 목록 (최신순)
     public List<RoomResponse> getMyRooms(String uid) throws Exception {
         return firestore.collection(ROOMS)
-            .whereArrayContains("participants", uid) // participants 배열에 내 uid 포함된 방만
+            .whereArrayContains("participants", uid)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .get().get()
             .getDocuments()
             .stream()
-            .map(this::toRoomResponse)
+            .map(doc -> toRoomResponse(doc, uid))
             .toList();
+    }
+
+    // 읽음 처리 - 내 unreadCount를 0으로 리셋
+    public void markAsRead(String roomId, String uid) throws Exception {
+        DocumentSnapshot room = firestore.collection(ROOMS).document(roomId).get().get();
+        if (!room.exists()) throw new NotFoundException("존재하지 않는 채팅방입니다.");
+
+        @SuppressWarnings("unchecked")
+        List<String> participants = (List<String>) room.get("participants");
+        if (participants == null || !participants.contains(uid)) {
+            throw new ForbiddenException("채팅방 참여자만 읽음 처리할 수 있습니다.");
+        }
+
+        firestore.collection(ROOMS).document(roomId)
+            .update("unreadCount." + uid, 0L).get();
     }
 
     /**
@@ -160,19 +176,27 @@ public class ChatService {
         DocumentReference msgRef = firestore.collection(MESSAGES).document();
         msgRef.set(msgData).get();
 
-        // 채팅방 마지막 메시지 갱신 (채팅 목록 미리보기)
-        roomRef.update(
-            "lastMessage", request.content(),
-            "lastMessageAt", FieldValue.serverTimestamp()
-        ).get();
+        // 채팅방 lastMessage 갱신 + 상대방 unreadCount +1
+        Map<String, Object> roomUpdates = new HashMap<>();
+        roomUpdates.put("lastMessage", request.content());
+        roomUpdates.put("lastMessageAt", FieldValue.serverTimestamp());
+        for (String other : participants.stream().filter(p -> !p.equals(uid)).toList()) {
+            roomUpdates.put("unreadCount." + other, FieldValue.increment(1));
+        }
+        roomRef.update(roomUpdates).get();
 
         return new MessageResponse(msgRef.getId(), roomId, uid, request.content(), null);
     }
 
     @SuppressWarnings("unchecked")
-    private RoomResponse toRoomResponse(DocumentSnapshot doc) {
+    private RoomResponse toRoomResponse(DocumentSnapshot doc, String uid) {
         Timestamp createdAt = doc.getTimestamp("createdAt");
         Timestamp lastMessageAt = doc.getTimestamp("lastMessageAt");
+        Map<String, Object> unreadCountMap = (Map<String, Object>) doc.get("unreadCount");
+        Long unreadCount = 0L;
+        if (unreadCountMap != null && unreadCountMap.get(uid) instanceof Number n) {
+            unreadCount = n.longValue();
+        }
         return new RoomResponse(
             doc.getId(),
             (List<String>) doc.get("participants"),
@@ -180,7 +204,8 @@ public class ChatService {
             doc.getString("itemType"),
             doc.getString("lastMessage"),
             lastMessageAt != null ? lastMessageAt.toDate().getTime() : null,
-            createdAt != null ? createdAt.toDate().getTime() : null
+            createdAt != null ? createdAt.toDate().getTime() : null,
+            unreadCount
         );
     }
 }
