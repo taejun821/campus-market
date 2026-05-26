@@ -3,7 +3,7 @@ $env:PATH = "$env:JAVA_HOME\bin;C:\Users\user\AppData\Local\Microsoft\WinGet\Pac
 $env:FIREBASE_STORAGE_BUCKET = "campus-market-35345.appspot.com"
 
 # 서버 백그라운드 실행
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; `$env:JAVA_HOME='C:\Users\user\.jdks\ms-17.0.18'; `$env:PATH=`"`$env:JAVA_HOME\bin;`$env:PATH`"; `$env:FIREBASE_STORAGE_BUCKET='campus-market-35345.appspot.com'; .\gradlew.bat bootRun"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; `$env:JAVA_HOME='C:\Users\user\.jdks\ms-17.0.18'; `$env:PATH='C:\Users\user\.jdks\ms-17.0.18\bin;' + `$env:PATH; `$env:FIREBASE_STORAGE_BUCKET='campus-market-35345.appspot.com'; .\gradlew.bat bootRun"
 
 # 서버 뜰 때까지 대기
 Write-Host "서버 시작 중..."

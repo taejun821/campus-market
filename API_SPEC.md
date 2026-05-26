@@ -301,6 +301,7 @@ Authorization: Bearer {token}
     "imageUrls": ["https://..."],
     "status": "SELLING",
     "userId": "uuid-string",
+    "userName": "홍길동",
     "viewCount": 0,
     "likeCount": 0,
     "createdAt": null
@@ -309,7 +310,7 @@ Authorization: Bearer {token}
 }
 ```
 
-> `region`은 서버가 로그인 유저의 가입 지역에서 자동으로 설정합니다.
+> `region`, `userName`은 서버가 로그인 유저 정보에서 자동으로 설정합니다.
 
 ---
 
@@ -495,6 +496,7 @@ Authorization: Bearer {token}
     "imageUrls": ["https://..."],
     "status": "LOST",
     "userId": "uuid-string",
+    "userName": "홍길동",
     "createdAt": null,
     "viewCount": 0,
     "likeCount": 0
@@ -773,6 +775,31 @@ Authorization: Bearer {token}
 ```json
 { "success": true, "data": null, "message": null }
 ```
+
+---
+
+## 7. 관리 (Admin)
+
+> `Authorization` 헤더 필요
+
+### 7-1. userName 마이그레이션
+`POST /api/admin/migrate/user-name`
+
+> 기존 게시물 중 `userName`이 없는 문서에 users 컬렉션에서 이름을 조회해 채워 넣습니다. 일회성 작업.
+
+**Response** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "trade_items": 5,
+    "lost_items": 3
+  },
+  "message": null
+}
+```
+
+> 숫자는 실제로 업데이트된 문서 수입니다.
 
 ---
 

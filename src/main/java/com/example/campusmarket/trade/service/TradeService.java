@@ -92,25 +92,23 @@ public class TradeService {
     public PageResponse<TradeResponse> findAll(String uid, String category, Long cursor, int size) throws Exception {
         String region = getUserRegion(uid);
 
-        Query query = firestore.collection(COLLECTION)
-            .whereEqualTo("region", region);
-
+        Query query = firestore.collection(COLLECTION).whereEqualTo("region", region);
         if (category != null && !category.isBlank()) {
             query = query.whereEqualTo("category", category);
-        }
-
-        query = query.orderBy("createdAt", Query.Direction.DESCENDING).limit(size + 1);
-
-        if (cursor != null) {
-            Timestamp ts = Timestamp.ofTimeSecondsAndNanos(cursor / 1000, (int)((cursor % 1000) * 1_000_000));
-            query = query.startAfter(ts);
         }
 
         List<TradeResponse> all = query.get().get()
             .getDocuments()
             .stream()
             .map(this::toResponse)
+            .filter(r -> r.createdAt() != null)
+            .sorted((a, b) -> Long.compare(b.createdAt(), a.createdAt()))
             .toList();
+
+        if (cursor != null) {
+            Long cur = cursor;
+            all = all.stream().filter(r -> r.createdAt() < cur).toList();
+        }
 
         boolean hasNext = all.size() > size;
         List<TradeResponse> items = hasNext ? all.subList(0, size) : all;
