@@ -64,14 +64,6 @@
         { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "userId", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "community_comments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "postId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
